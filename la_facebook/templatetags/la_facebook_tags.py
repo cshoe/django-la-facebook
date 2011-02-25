@@ -24,8 +24,6 @@ def profile_pic_src(user, type='normal'):
         http://graph.facebook.com/<fb id>/picture?type=<type>
         
     Valid type values are: small, normal, large.
-    
-    #TODO: Return empty string instead of none?
     """
     if user.is_authenticated():
         try:
