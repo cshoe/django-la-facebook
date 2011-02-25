@@ -14,3 +14,12 @@ class UserAssociation(models.Model):
     
     def expired(self):
         return datetime.datetime.now() < self.expires
+    
+    @property
+    def clean_identifier(self):
+        """
+        Strip fb- out of identifier.
+        
+        Should this be done in the save method? Is there a reason to store fb-?
+        """
+        return self.identifier.replace('fb-', '')
