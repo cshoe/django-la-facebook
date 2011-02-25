@@ -1,3 +1,5 @@
+{% load la_facebook_tags %}
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,6 +8,7 @@
 <body>
     <h2>Login Protected Page</h2>
     {% if user %}
+        <img src="{% profile_pic_src user %}" alt="profile_pic">
         {% if profile %}
             Your name is {{ profile.name }}. You're all about {{ profile.bio }}
         {% else %}
