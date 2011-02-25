@@ -16,7 +16,7 @@ def authed_via(user):
     else:
         return False
     
-@register.filter
+@register.simple_tag
 def profile_pic_src(user, type='normal'):
     """
     Returns url for user's Facebook profile. The url format is:
@@ -31,9 +31,9 @@ def profile_pic_src(user, type='normal'):
         try:
             assoc = UserAssociation.objects.get(user=user)
         except UserAssociation.DoesNotExist:
-            return None
+            return ''
         url = 'http://graph.facebook.com/%s/picture?type=%s'
-        return url % (assoc.identifier, type)
+        return url % (assoc.clean_identifier, type)
     else:
-        return None
+        return ''
     
