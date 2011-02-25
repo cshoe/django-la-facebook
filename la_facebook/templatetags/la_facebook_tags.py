@@ -15,3 +15,25 @@ def authed_via(user):
         return assoc.expired()
     else:
         return False
+    
+@register.filter
+def profile_pic_src(user, type='normal'):
+    """
+    Returns url for user's Facebook profile. The url format is:
+    
+        http://graph.facebook.com/<fb id>/picture?type=<type>
+        
+    Valid type values are: small, normal, large.
+    
+    #TODO: Return empty string instead of none?
+    """
+    if user.is_authenticated():
+        try:
+            assoc = UserAssociation.objects.get(user=user)
+        except UserAssociation.DoesNotExist:
+            return None
+        url = 'http://graph.facebook.com/%s/picture?type=%s'
+        return url % (assoc.identifier, type)
+    else:
+        return None
+    
