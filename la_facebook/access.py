@@ -16,36 +16,33 @@ from django.contrib.sites.models import Site
 import oauth2 as oauth
 
 from la_facebook.exceptions import (
-                    NotAuthorized, MissingToken, UnknownResponse, 
+                    NotAuthorized, MissingToken, UnknownResponse,
                     ServiceFail, FacebookSettingsKeyError
                     )
 from la_facebook.utils.anyetree import etree
 from la_facebook.utils.loader import load_path_attr
-
-
-logger = logging.getLogger("la_facebook.access")
-
+from la_facebook.la_fb_logging import logger
 
 class OAuthAccess(object):
     """
         Authorize OAuth access
     """
-    
+
     def __init__(self):
         self.signature_method = oauth.SignatureMethod_HMAC_SHA1()
         self.consumer = oauth.Consumer(self.key, self.secret)
-    
+
     @property
     def key(self):
         """
             accessor for key setting
         """
-        
+
         try:
             return settings.FACEBOOK_ACCESS_SETTINGS["FACEBOOK_APP_ID"]
         except KeyError:
             raise FacebookSettingsKeyError("FACEBOOK_ACCESS_SETTINGS must have a FACEBOOK_APP_ID entry")
-    
+
     @property
     def secret(self):
         """
@@ -61,7 +58,7 @@ class OAuthAccess(object):
             accessor for access_token setting
         """
         return "https://graph.facebook.com/oauth/access_token"
-    
+
     @property
     def authorize_url(self):
         """
@@ -87,7 +84,7 @@ class OAuthAccess(object):
         if not hasattr(self, "_unauthorized_token"):
             self._unauthorized_token = self.fetch_unauthorized_token()
         return self._unauthorized_token
-    
+
     def fetch_unauthorized_token(self):
         """
             This function may further handle when a user does not authorize the app to access their facebook information.
@@ -109,7 +106,7 @@ class OAuthAccess(object):
                     response["status"], self.request_token_url, content
                 ))
         return oauth.Token.from_string(content)
-    
+
     @property
     def callback_url(self):
         """
@@ -118,13 +115,13 @@ class OAuthAccess(object):
             grab callback url
             return base and callback url
         """
-        
+
         current_site = Site.objects.get(pk=settings.SITE_ID)
         # @@@ http fix
         base_url = "http://%s" % current_site.domain
         callback_url = reverse("la_facebook_callback")
         return "%s%s" % (base_url, callback_url)
-    
+
     def authorized_token(self, token, verifier=None):
         """
             authorize token
@@ -140,6 +137,7 @@ class OAuthAccess(object):
                 "oauth_verifier": verifier,
             })
         client = oauth.Client(self.consumer, token=token)
+        logger.debug("OAuthAccess.authorized_token: params: %s" % parameters)
         response, content = client.request(self.access_token_url,
             method = "POST",
             # parameters must be urlencoded (which are then re-decoded by
@@ -151,8 +149,10 @@ class OAuthAccess(object):
                 "Got %s from %s:\n\n%s" % (
                     response["status"], self.access_token_url, content
                 ))
+        logger.debug("OAuthAccess.authorized_token: response from %s: %s"
+                % (self.access_token_url,content))
         return oauth.Token.from_string(content)
-    
+
     def check_token(self, unauth_token, parameters):
         """
             check token
@@ -161,6 +161,10 @@ class OAuthAccess(object):
             return OAuth token
         """
         if unauth_token:
+            logger.debug("OAuthAccess.check_token: have unauth_token %s"
+                    % unauth_token)
+            logger.debug("OAuthAccess.check_token: parameters: %s"
+                    % parameters)
             token = oauth.Token.from_string(unauth_token)
             if token.key == parameters.get("oauth_token", "no_token"):
                 verifier = parameters.get("oauth_verifier")
@@ -176,20 +180,26 @@ class OAuthAccess(object):
                 )
                 params["client_secret"] = self.secret
                 params["code"] = code
+                logger.debug("OAuthAccess.check_token: token access params: "\
+                        "%s, sent to %s" % (params, self.access_token_url))
                 raw_data = urllib.urlopen(
                     "%s?%s" % (
                         self.access_token_url, urllib.urlencode(params)
                     )
                 ).read()
                 response = cgi.parse_qs(raw_data)
+                logger.debug("OAuthAccess.check_token: response from code"\
+                        "request: %s" % response)
                 return OAuth20Token(
                     response["access_token"][-1],
                     int(response["expires"][-1])
                 )
             else:
                 # @@@ this error case is not nice
+                logger.warning("OAuth20Token.check_token: no unauthorized" \
+                        "token or code provided")
                 return None
-    
+
     @property
     def callback(self):
         """
@@ -201,7 +211,7 @@ class OAuthAccess(object):
             # raise FacebookSettingsKeyError("FACEBOOK_ACCESS_SETTINGS must have a CALLBACK entry")
             callback_str = "la_facebook.callbacks.default.default_facebook_callback"
         return load_path_attr(callback_str)
-    
+
     def authorization_url(self, token=None):
         """
             authorization url
@@ -227,7 +237,7 @@ class OAuthAccess(object):
             )
             request.sign_request(self.signature_method, self.consumer, token)
             return request.to_url()
-    
+
     def make_api_call(self, kind, url, token, method="GET", **kwargs):
         if isinstance(token, OAuth20Token):
             request_kwargs = dict(method=method)
@@ -247,8 +257,7 @@ class OAuthAccess(object):
             raise NotAuthorized()
         if not content:
             raise ServiceFail("no content")
-        logger.debug("response: %r" % response)
-        logger.debug("content: %r" % content)
+        logger.debug("OAuthAccess.make_api_call: content returned: %r" % content)
         if kind == "raw":
             return content
         elif kind == "json":
@@ -265,13 +274,13 @@ class OAuthAccess(object):
 
 
 class OAuth20Token(object):
-    
+
     def __init__(self, token, expires=None):
         self.token = token
         if expires is not None:
             self.expires = datetime.datetime.now() + datetime.timedelta(seconds=expires)
         else:
             self.expires = None
-    
+
     def __str__(self):
         return str(self.token)

@@ -1,2 +1,2 @@
-oauth2==1.5.163
-django==1.2.4
+oauth2>=1.5.163
+django>=1.2.5

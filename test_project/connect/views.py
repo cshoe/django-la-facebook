@@ -21,7 +21,7 @@ def fbinfo(request):
                 info['Association Object'] = "not found"
             else:
                 info['Associated FB Token Expires'] = assoc_obj.expires
-                info['Facebook ID'] = assoc_obj.identifier.split('-')[1]
+                info['Facebook ID'] = assoc_obj.identifier
     else:
         info['User Authenticated'] = 'No'
     info['Session Expires'] = request.session.get_expiry_date()

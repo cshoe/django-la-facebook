@@ -80,6 +80,10 @@ and authenticate to your site.  A simple example might look like this::
 
      <p><a href="{% url la_facebook_login %}?next={{ next }}">Login with FaceBook</a></p>
 
+You can used the following image provided by facebook as a graphical link::
+
+    http://static.ak.fbcdn.net/images/fbconnect/login-buttons/connect_light_medium_long.gif
+
 Other than the error template mentioned above, no particular templates are used
 or customized.
 

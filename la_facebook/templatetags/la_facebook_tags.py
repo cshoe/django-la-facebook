@@ -31,7 +31,7 @@ def profile_pic_src(user, type='normal'):
         except UserAssociation.DoesNotExist:
             return ''
         url = 'http://graph.facebook.com/%s/picture?type=%s'
-        return url % (assoc.clean_identifier, type)
+        return url % (assoc.identifier, type)
     else:
         return ''
     

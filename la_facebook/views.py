@@ -45,9 +45,11 @@ def facebook_callback(request, error_template_name="la_facebook/fb_error.html"):
         auth_token = access.check_token(unauth_token, request.GET)
     except MissingToken:
         ctx.update({"error": "token_missing"})
-        logger.error('la_facebook.views.facebook_login: missing token')
+        logger.error('la_facebook.views.facebook_callback: missing token')
     else:
         if auth_token:
+            logger.debug('la_facebook.views.facebook_callback: token success '\
+                    ', sending to callback')
             return access.callback(request, access, auth_token)
         else:
             # @@@ not nice for OAuth 2

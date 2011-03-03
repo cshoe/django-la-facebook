@@ -49,12 +49,14 @@ class PropertyTests(TestCase):
     def test_key_in_settings(self):
         # test if there is a key
         oauth = OAuthAccess()
-        self.assertEquals(oauth.key, "124397597633470")
+        expected = settings.FACEBOOK_ACCESS_SETTINGS["FACEBOOK_APP_ID"]
+        self.assertEquals(oauth.key, expected)
 
 
     def test_secret_in_settings(self):
         oauth = OAuthAccess()
-        self.assertEquals(oauth.secret, "cdd60917e6a30548b933ba91c48289bc")
+        expected = settings.FACEBOOK_ACCESS_SETTINGS["FACEBOOK_APP_SECRET"]
+        self.assertEquals(oauth.secret, expected)
 
     def test_access_token_url(self):
         oauth = OAuthAccess()
