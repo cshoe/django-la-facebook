@@ -1,10 +1,9 @@
 from django.conf import settings
+from django.test import TestCase
 
 import httplib2
 
-from fb_la_test.connect.tests.utils import LaFacebookTestCase
-
-class TestConnection(LaFacebookTestCase):
+class TestConnection(TestCase):
     
         
     def test_login_first_stage(self):

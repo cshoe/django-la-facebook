@@ -1,4 +1,5 @@
 from django import template
+from django.contrib.auth.models import User
 
 from la_facebook.models import UserAssociation
 
@@ -17,7 +18,7 @@ def authed_via(user):
         return False
     
 @register.simple_tag
-def profile_pic_src(user, type='normal'):
+def profile_pic_src(user_obj, image_type='normal'):
     """
     Returns url for user's Facebook profile. The url format is:
     
@@ -25,13 +26,13 @@ def profile_pic_src(user, type='normal'):
         
     Valid type values are: small, normal, large.
     """
-    if user.is_authenticated():
+    if isinstance(user_obj, User):
         try:
-            assoc = UserAssociation.objects.get(user=user)
+            user_assoc = UserAssociation.objects.get(user=user_obj)
         except UserAssociation.DoesNotExist:
             return ''
-        url = 'http://graph.facebook.com/%s/picture?type=%s'
-        return url % (assoc.identifier, type)
+    elif isinstance(user_obj, UserAssociation):
+        user_assoc = user_obj
     else:
         return ''
-    
+    return user_assoc.facebook_avatar_src(image_type)

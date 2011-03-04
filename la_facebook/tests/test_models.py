@@ -32,4 +32,27 @@ class UserAssociationTests(TestCase):
                 expires=datetime.now() - timedelta(1)
         )
         ua_expired.save()
-        self.assertFalse(ua_expired.expired())        
+        self.assertFalse(ua_expired.expired())
+        
+    def test_facebook_profile(self):
+        """ Check to see if we can get """
+        PYDANNY_FBID = "728398575"
+        
+        #this works with no token as we are pulling public data
+        danny_assoc = UserAssociation.objects.create(
+                user=self.user1,
+                identifier=PYDANNY_FBID,
+                token="",
+                expires=datetime.now() + timedelta(1)
+        )
+        
+        danny_assoc.save()
+        
+        profile = danny_assoc.facebook_profile
+        
+        self.assertEqual(PYDANNY_FBID, profile['id'])
+        self.assertEqual("Daniel Greenfeld", profile['name'])
+        self.assertEqual("Daniel", profile['first_name'])
+        self.assertEqual("Greenfeld", profile['last_name'])
+        self.assertEqual("http://www.facebook.com/daniel.greenfeld", profile['link'])
+        self.assertEqual("male", profile['gender'])

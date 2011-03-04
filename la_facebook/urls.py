@@ -12,4 +12,9 @@ urlpatterns = patterns("la_facebook.views",
         view = "facebook_callback",
         name = "la_facebook_callback"
     ),
+    url(
+        regex = r"^friends",
+        view = "facebook_friends",
+        name = "la_facebook_friends"
+    ),
 )

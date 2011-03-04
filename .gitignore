@@ -3,3 +3,5 @@ dist
 *pyc
 lafbenv/
 test_project/dummy
+.project
+.pydevproject

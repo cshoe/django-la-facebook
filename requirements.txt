@@ -1,2 +1,5 @@
 oauth2>=1.5.163
 django>=1.2.5
+
+#Official Facebook Python SDK
+-e git+http://github.com/facebook/python-sdk.git#egg=facebook-python-sdk

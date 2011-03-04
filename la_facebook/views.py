@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -5,6 +6,7 @@ from django.template import RequestContext
 from la_facebook.access import OAuthAccess
 from la_facebook.exceptions import MissingToken
 from la_facebook.la_fb_logging import logger
+from la_facebook.utils.graph_api import get_friends_on_site
 
 
 def facebook_login(request, redirect_field_name="next",
@@ -83,3 +85,14 @@ def finish_signup(request):
     access = OAuthAccess()
     return access.callback.finish_signup(request)
 '''
+
+@login_required
+def facebook_friends(request, template_name="la_facebook/friends.html"):
+    """
+    Get Facebook open graph data for logged in user.
+    """
+    assocs = get_friends_on_site(request.user)
+    
+    return render_to_response(template_name, { "friends": assocs }, 
+                              context_instance=RequestContext(request))
+    
