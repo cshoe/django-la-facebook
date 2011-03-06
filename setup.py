@@ -22,5 +22,11 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python",
         "Framework :: Django",
+    ],
+    install_requires=[
+        "facebook"
+    ],
+    dependency_links = [
+        "http://github.com/facebook/python-sdk.git#egg=facebook-python-sdk"
     ]
 )
