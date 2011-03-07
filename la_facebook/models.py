@@ -33,6 +33,11 @@ class UserAssociation(models.Model):
                 return None
         return self.fb_profile
     
+    @property
+    def large_avatar(self):
+        """ Silly but it makes templates so much easier. """
+        return self.facebook_avatar_src("large")
+    
     def facebook_avatar_src(self, size="normal"):
         url = 'http://graph.facebook.com/{0}/picture?type={1}'
         return url.format(self.identifier, size)
