@@ -1,12 +1,15 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
+
+import facebook
 
 from la_facebook.access import OAuthAccess
 from la_facebook.exceptions import MissingToken
 from la_facebook.la_fb_logging import logger
+from la_facebook.models import UserAssociation
 from la_facebook.utils.graph_api import get_friends_on_site
 
 
@@ -88,13 +91,27 @@ def finish_signup(request):
 '''
 
 @login_required
-def facebook_friends(request, username=None, template_name="la_facebook/friends.html"):
+def facebook_friends(request, username=None, 
+                     success_template_name="la_facebook/friends.html",
+                     no_fb_template_name="la_facebook/no_fb_profile.html",
+                     token_error_template_name="la_facebook/token_error.html"):
     """
     Get Facebook friends that are also on the site.
     """
     user = get_object_or_404(User, username=username)
-    assocs = get_friends_on_site(user)
+    
+    try:
+        assocs = get_friends_on_site(user)
+    except UserAssociation.DoesNotExist:
+        #we don't know this users Facebook profile
+        return render_to_response(no_fb_template_name, 
+                              context_instance=RequestContext(request))
+    except facebook.GraphAPIError:
+        #token for this user has expired or something else went wrong
+        #communicating with FB.
+        return render_to_response(token_error_template_name, 
+                              context_instance=RequestContext(request))
 
-    return render_to_response(template_name, { "friends": assocs }, 
+    return render_to_response(success_template_name, { "friends": assocs }, 
                               context_instance=RequestContext(request))
     
