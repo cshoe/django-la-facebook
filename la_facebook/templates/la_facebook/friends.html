@@ -1,20 +1,16 @@
 {% load la_facebook_tags %}
-
+<h1>FUCK</h1>
 {% if friends %}
-    {% if friends|length > 0 %}
-        <ul>
-        {% for friend in friends %}
-            <li>
-                <a href="{{ friend.facebook_profile.link }}">
-                    <img src="{% profile_pic_src friend %}" alt="profile_pic">
-                    {{ friend.facebook_profile.name }}
-                </a>
-            </li>
-        {% endfor %}
-        </ul>
-    {% else %}
-    <p>None of your Facebook friends are here yet. Get them here!</p>
-    {% endif %}
+<ul>
+{% for friend in friends %}
+    <li>
+        <a href="{{ friend.facebook_profile.link }}">
+            <img src="{% profile_pic_src friend %}" alt="profile_pic">
+            {{ friend.facebook_profile.name }}
+        </a>
+    </li>
+{% endfor %}
+</ul>
 {% else %}
-<p>We don't know your Facebook profile yet.</p>
+<p>None of your Facebook friends are here yet. Get them here!</p>
 {% endif %}

@@ -11,12 +11,11 @@ def get_friends_on_site(user):
         assoc = UserAssociation.objects.get(user=user)
     except UserAssociation.DoesNotExist:
         return None
-    graph = facebook.GraphAPI(assoc.token)
+    graph = facebook.GraphAPI()
     
-    #'me' here designates the currently logged in user
-    fb_friends = graph.get_connections('me', 'friends')['data']
+    fb_friends = graph.get_connections(assoc.identifier, 'friends')['data']
     if fb_friends:
         #filter friends on UserAssociation objects
         site_friends = UserAssociation.objects.filter(identifier__in=[i['id'] for i in fb_friends])
         return site_friends
-    return None    
+    return None

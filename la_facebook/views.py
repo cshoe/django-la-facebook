@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -87,12 +88,13 @@ def finish_signup(request):
 '''
 
 @login_required
-def facebook_friends(request, template_name="la_facebook/friends.html"):
+def facebook_friends(request, username=None, template_name="la_facebook/friends.html"):
     """
-    Get Facebook open graph data for logged in user.
+    Get Facebook friends that are also on the site.
     """
-    assocs = get_friends_on_site(request.user)
-    
+    user = get_object_or_404(User, username=username)
+    assocs = get_friends_on_site(user)
+
     return render_to_response(template_name, { "friends": assocs }, 
                               context_instance=RequestContext(request))
     

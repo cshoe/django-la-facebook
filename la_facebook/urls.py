@@ -13,7 +13,7 @@ urlpatterns = patterns("la_facebook.views",
         name = "la_facebook_callback"
     ),
     url(
-        regex = r"^friends",
+        regex = r"^friends/(?P<username>[\w-]+)",
         view = "facebook_friends",
         name = "la_facebook_friends"
     ),
