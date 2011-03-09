@@ -42,7 +42,6 @@ def facebook_callback(request, error_template_name="la_facebook/fb_error.html"):
         7. raise exception if mismatch token
         8. render error 
     """
-    
     ctx = RequestContext(request)
     access = OAuthAccess()
     # TODO: Check to make sure the session cookie is setting correctly
@@ -56,7 +55,7 @@ def facebook_callback(request, error_template_name="la_facebook/fb_error.html"):
         if auth_token:
             logger.debug('la_facebook.views.facebook_callback: token success '\
                     ', sending to callback')
-            return access.callback(request, access, auth_token)
+            return access.callback(request, auth_token)
         else:
             # @@@ not nice for OAuth 2
             ctx.update({"error": "token_mismatch"})

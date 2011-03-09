@@ -35,9 +35,22 @@ class UserAssociation(models.Model):
     
     @property
     def large_avatar(self):
-        """ Silly but it makes templates so much easier. """
+        """ Silly but it makes templates so much easier for the time being """
         return self.facebook_avatar_src("large")
+    
+    @property
+    def normal_avatar(self):
+        """ Silly but it makes templates so much easier for the time being """
+        return facebook_avatar_src("normal")
+    
+    @property
+    def small_avatar(self):
+        """ Silly but it makes templates so much easier for the time being """
+        return facebook_avatar_src("small")
     
     def facebook_avatar_src(self, size="normal"):
         url = 'http://graph.facebook.com/{0}/picture?type={1}'
         return url.format(self.identifier, size)
+    
+    def __unicode__(self):
+        return 'UserAssociation for {0}'.format(self.user)

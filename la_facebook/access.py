@@ -209,7 +209,7 @@ class OAuthAccess(object):
             callback_str = settings.FACEBOOK_ACCESS_SETTINGS["CALLBACK"]
         except KeyError:
             # raise FacebookSettingsKeyError("FACEBOOK_ACCESS_SETTINGS must have a CALLBACK entry")
-            callback_str = "la_facebook.callbacks.default.default_facebook_callback"
+            callback_str = "la_facebook.callbacks.base.base_facebook_callback"
         return load_path_attr(callback_str)
 
     def authorization_url(self, token=None):
@@ -237,41 +237,6 @@ class OAuthAccess(object):
             )
             request.sign_request(self.signature_method, self.consumer, token)
             return request.to_url()
-
-    def make_api_call(self, kind, url, token, method="GET", **kwargs):
-        if isinstance(token, OAuth20Token):
-            request_kwargs = dict(method=method)
-            if method == "POST":
-                params = {
-                    "access_token": str(token),
-                }
-                params.update(kwargs["params"])
-                request_kwargs["body"] = urllib.urlencode(params)
-            else:
-                url += "?%s" % urllib.urlencode(dict(access_token=str(token)))
-            http = httplib2.Http()
-            response, content = http.request(url, **request_kwargs)
-        else:
-            raise ValueError("an OAuth20Token is required for API call")
-        if response["status"] == "401":
-            raise NotAuthorized()
-        if not content:
-            raise ServiceFail("no content")
-        logger.debug("OAuthAccess.make_api_call: content returned: %r" % content)
-        if kind == "raw":
-            return content
-        elif kind == "json":
-            try:
-                return json.loads(content)
-            except ValueError:
-                # @@@ might be better to return a uniform cannot parse
-                # exception and let caller determine if it is service fail
-                raise ServiceFail("JSON parse error")
-        elif kind == "xml":
-            return etree.ElementTree(etree.fromstring(content))
-        else:
-            raise Exception("unsupported API kind")
-
 
 class OAuth20Token(object):
 

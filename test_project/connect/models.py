@@ -1,9 +1,9 @@
 from django.contrib.auth.models import User
 from django.db import models
 
-# Create your models here.
-
 class Profile(models.Model):
-    user = models.ForeignKey(User)
-    bio = models.TextField()
-    name = models.CharField(max_length=255)
+    
+    user = models.ForeignKey(User, unique=True, related_name='profile')
+    first_name = models.CharField('First Name', max_length=255)
+    last_name = models.CharField('Last Name', max_length=255)
+    email = models.EmailField('Email')

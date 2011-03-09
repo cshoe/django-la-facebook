@@ -1,56 +1,172 @@
+import facebook
+
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.db.models import get_model
 from django.template.defaultfilters import slugify
+from django.contrib.auth import login
 from django.contrib.auth.models import User
 from django.conf import settings
 
 from la_facebook.la_fb_logging import logger
+from la_facebook.models import UserAssociation
 
 
 class BaseFacebookCallback(object):
 
     FACEBOOK_GRAPH_TARGET = "https://graph.facebook.com/me"
-
-    def __call__(self, request, access, token):
-        if not request.user.is_authenticated():
-            logger.debug("BaseFacebookCallback.__call__:'\
-                    ' request.user not authenticated")
-            self.authenticated = False
-            user_data = self.fetch_user_data(request, access, token)
-            user = self.lookup_user(request, access, user_data)
-            if user is None:
-                logger.debug("BaseFacebookCallback.__call__:'\
-                 ' no existing django user found for this facebook identifier")
-                ret = self.handle_no_user(request, access, token, user_data)
-                # allow handle_no_user to create a user if need be
-                if isinstance(ret, User):
-                    logger.debug("BaseFacebookCallback.__call__:'\
-                            self.handle_no_user returned valid django user")
-                    user = ret
+    def __call__(self, request, token):
+        user_data = self.fetch_user_data(token)
+        expires = hasattr(token, "expires") and token.expires or None
+        user_assoc = self.lookup_user_assoc(user_data['id'])
+        #user was not logged in to Lofty when they logged into FB
+        if request.user.is_authenticated():
+            if user_assoc:
+                #update token and expires
+                self.update_user_association(user_assoc, token, expires)
             else:
-                logger.debug("BaseFacebookCallback.__call__:'\
-                   existing django user found for this facebook identifier")
-                ret = self.handle_unauthenticated_user(request, user, access, 
-                        token, user_data)
-            if isinstance(ret, HttpResponse):
-                return ret
+                #create UserAssociation tied to request.user
+                self.create_user_association(request.user, token, expires, user_data)
         else:
-            logger.debug("BaseFacebookCallback.__call__:'\
-                    request.user is authenticated")
-            self.authenticated = True
-            user = request.user
-        redirect_to = self.redirect_url(request)
+            #find a user based on email if we got it from FB (we should in Lofty).
+            #making this general for now so I can move it over to la_facebook later
+            if user_assoc:
+                #We know this account, update user get associated user and login
+                self.update_user_association(user_assoc, token, expires)
+                user = self.lookup_user(user_assoc.identifier)
+            else:
+                if 'email' in user_data:
+                    user = self.lookup_user_by_email(user_data['email'])
+                    if user:
+                        self.create_user_association(user, token, expires, user_data)
+                        #Do we want to update profile?
+                        #self.update_profile(user, user_data, profile)
+                    else:
+                        user = self.create_user(request, token, expires, user_data)
+                else:
+                    user = self.create_user(request, token, expires, user_data)
+            self.login_user(request, user)
+        return redirect(self.redirect_url(request))
+    
+    def fetch_user_data(self, token):
+        graph = facebook.GraphAPI(token)
+        return graph.get_object('me')
+    
+    def lookup_user_assoc(self, fb_id):
+        """ Find out UserAssociation object for FB id """
+        try:
+            assoc = UserAssociation.objects.get(identifier=fb_id)
+        except UserAssociation.DoesNotExist:
+            return None
+        return assoc
+    
+    def lookup_user(self, fb_id):
+        """ Find a user object for a FB id """
+        queryset = UserAssociation.objects.all()
+        queryset = queryset.select_related("user")
+        try:
+            assoc = UserAssociation.objects.get(identifier=fb_id)
+        except UserAssociation.DoesNotExist:
+            return None
+        return assoc.user
+    
+    def lookup_user_by_email(self, fb_email):
+        try:
+            user = User.objects.get(email=fb_email)
+        except User.DoesNotExist:
+            return None
+        return user
+    
+    def create_profile(self, user, user_data):
+        """ Create user profile if one is defined """
+        if hasattr(settings, 'AUTH_PROFILE_MODULE'):
+            profile_model = get_model(*settings.AUTH_PROFILE_MODULE.split('.'))
 
-        return redirect(redirect_to)
+            profile, created = profile_model.objects.get_or_create(
+              user = user,
+            )
+            profile = self.update_profile(user_data, profile)
+            profile.save()
 
-    def fetch_user_data(self, request, access, token):
-        raise NotImplementedError(
-                "Callbacks must have a fetch_user_data method")
-
-    def lookup_user(self, request, access, user_data):
-        raise NotImplementedError("Callbacks must have a lookup_user method")
+        else:
+            # Do nothing because users have no site profile defined
+            # TODO - should we pass a warning message? Raise a SiteProfileNotAvailable error?
+            logger.warning("DefaultFacebookCallback.create_profile: unable to" \
+                    "create/update profile as no AUTH_PROFILE_MODULE setting" \
+                    "has been defined")
+            pass
+    
+    def update_profile(self, user_data, profile):
+        for k, v in user_data.items():
+            if k !='id' and hasattr(profile, k):
+                setattr(profile, k, v)
+                logger.debug("DefaultFacebookCallback.update_profile_from_graph"\
+                        ": updating profile %s to %s" % (k,v))
+        return profile
+    
+    def login_user(self, request, user):
+        user.backend = "django.contrib.auth.backends.ModelBackend"
+        login(request, user)
+        
+    def create_user_association(self, user, token, expires, user_data):
+        """ Create UserAssociation """
+        assoc = UserAssociation (
+                user=user,
+                token=str(token),
+                expires=expires,
+                identifier=user_data['id']
+        )
+        assoc.save()
+        return assoc
+        
+    def update_user_association(self, assoc, token, expires):
+        """ Update UserAssociation token and expires date """
+        assoc.token = str(token)
+        assoc.expires = expires
+        assoc.save()
+        
+    def create_user(self, request, token, expires, user_data):
+        """
+        Create a user object for new user that registered via Facebook.
+        Do not use this for linking existing Lofty accounts to Facebook
+        accounts.
+        """
+        username = self.get_facebook_username(user_data)
+        username = self.validate_facebook_username(username)
+        user = User(username=username)
+        if 'email' in user_data:
+            user.email = user_data['email']
+        user.save()
+        
+        self.create_profile(user, user_data)
+        self.create_user_association(user, token, expires, user_data)
+        return user
+    
+    def get_facebook_username(self, user_data):
+        """
+        user link = http://www.facebook.com/<unique_username>
+        This returns <unique_username>
+        """
+        link = user_data['link']
+        return link.split('http://www.facebook.com/')[1]
+    
+    def validate_facebook_username(self, fb_username):
+        """ Check to see if FB username is already in use on Lofty.com """
+        username = fb_username
+        count = 1
+        while User.objects.filter(username=username).count():
+            username = ('{0}{1}').format(username, count)
+            count = count + 1
+        return username
+            
+    def get_facebook_locale(self, user_data):
+        """
+        Return the first 2 letters of the FB locale data
+        """
+        locale = user_data['locale']
+        locale = locale[:1]
+        #make sure you support the user's language.
 
     def redirect_url(self, request, fallback_url=settings.LOGIN_REDIRECT_URL, 
             redirect_field_name="next", session_key_value="redirect_to"):
@@ -73,14 +189,4 @@ class BaseFacebookCallback(object):
             redirect_to = fallback_url
         return redirect_to
 
-    def handle_no_user(self, request, access, token, user_data):
-        raise NotImplementedError("Callbacks must have a handle_no_user method")
-
-    def handle_unauthenticated_user(
-            self, request, user, access, token, user_data):
-        raise NotImplementedError("Callbacks must have a '\
-                'handle_unauthenticated_user method")
-
-    def identifier_from_data(self, data):
-        return "%s-%s" % (slugify(data['name']), data['id'])
-
+base_facebook_callback = BaseFacebookCallback()

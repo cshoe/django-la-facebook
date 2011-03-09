@@ -10,7 +10,7 @@
     {% if user %}
         <img src="{% profile_pic_src user %}" alt="profile_pic">
         {% if profile %}
-            Your name is {{ profile.name }}. You're all about {{ profile.bio }}
+            Your name is {{ profile.first_name }} {{ profile.last_name }}.
         {% else %}
             You're logged in as {{ user.username }}, but you don't seem to have a profile.
         {% endif %}
