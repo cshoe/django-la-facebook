@@ -89,7 +89,6 @@ def finish_signup(request):
     return access.callback.finish_signup(request)
 '''
 
-@login_required
 def facebook_friends(request, username=None, 
                      success_template_name="la_facebook/friends.html",
                      no_fb_template_name="la_facebook/no_fb_profile.html",
