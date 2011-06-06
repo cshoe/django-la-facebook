@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 
@@ -10,7 +10,7 @@ from la_facebook.access import OAuthAccess
 from la_facebook.exceptions import MissingToken
 from la_facebook.la_fb_logging import logger
 from la_facebook.models import UserAssociation
-from la_facebook.utils.graph_api import get_friends_on_site
+from la_facebook.utils.graph_api import get_friends_on_site, do_fql_query
 
 
 def facebook_login(request, redirect_field_name="next",
@@ -86,7 +86,7 @@ def finish_signup(request):
     """
     
     access = OAuthAccess()
-    return access.callback.finish_signup(request)
+    return access.callback.finish_signup(request) 
 '''
 
 def facebook_friends(request, username=None, 
@@ -112,4 +112,3 @@ def facebook_friends(request, username=None,
 
     return render_to_response(success_template_name, { "friends": assocs }, 
                               context_instance=RequestContext(request))
-    
