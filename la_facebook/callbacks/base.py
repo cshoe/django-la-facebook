@@ -5,13 +5,16 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.db.models import get_model
 from django.template.defaultfilters import slugify
+from django.conf import settings
 from django.contrib.auth import login
 from django.contrib.auth.models import User
 from django.conf import settings
 
 from la_facebook.la_fb_logging import logger
-from la_facebook.models import UserAssociation
+from la_facebook.models import UserAssociation, Friend
+from la_facebook.utils.graph_api import get_friends_on_facebook
 
+FACEBOOK_SETTINGS = getattr(settings, 'FACEBOOK_ACCESS_SETTINGS', {})
 
 class BaseFacebookCallback(object):
 
@@ -47,7 +50,42 @@ class BaseFacebookCallback(object):
                 else:
                     user = self.create_user(request, token, expires, user_data)
             self.login_user(request, user)
+        try:
+            do_friends = FACEBOOK_SETTINGS['STORE_FRIENDS']
+        except KeyError:
+            pass
+        else:
+            if do_friends:
+                self.do_friends_update(request.user)
         return redirect(self.redirect_url(request))
+    
+    def do_friends_update(self, user):
+        logger.debug('Starting friends update.')
+        friends_on_facebook = get_friends_on_facebook(user)
+        print 'fuck'
+        print friends_on_facebook
+        friend_ids_on_site = Friend.objects.filter(uid1=user).values_list('uid2', flat=True)
+        friend_user_associations = UserAssociation.objects.filter(user__pk__in=friend_ids_on_site)
+        
+        friends_to_delete = []
+        
+        for ua in friend_user_associations:
+            id = ua.identifier
+            try:
+                friends_on_facebook[id]
+            except KeyError:
+                try:
+                    logger.debug('Removing {0} from add list.'.format(id))
+                    friends_on_facebook.remove(id)
+                except ValueError:
+                    logger.debug('Error removing id from friends list.')
+                    pass
+            else:
+                if id not in friends_on_facebook:
+                    logger.debug('Adding {0} to delete list.'.format(id))
+                    friends_to_delete.append(id)
+                
+        logger.debug('Adding friends with facebook ids:'.format(friends_on_facebook))
     
     def fetch_user_data(self, token):
         graph = facebook.GraphAPI(token)
@@ -149,7 +187,10 @@ class BaseFacebookCallback(object):
         This returns <unique_username>
         """
         link = user_data['link']
-        return link.split('http://www.facebook.com/')[1]
+        id_spot = link.find('profile.php?id=')
+        if id_spot == -1:
+            return link.split('http://www.facebook.com/')[1]
+        return link.split('http://www.facebook.com/profile.php?id=')[1]
     
     def validate_facebook_username(self, fb_username):
         """ Check to see if FB username is already in use on Lofty.com """

@@ -11,13 +11,8 @@ def get_friends_on_site(user):
     
     Raises UserAssociation.DoesNotExist and facebook.GraphAPIError
     """
-    #raises UserAssociation.DoesNotExist:
-    assoc = UserAssociation.objects.get(user=user)
     
-    fql_query = "SELECT uid FROM user WHERE is_app_user AND uid IN (SELECT uid2 FROM friend WHERE uid1 = {0})".format(assoc.identifier)
-    fb_friends = json.load(do_fql_query(fql_query, assoc.token))
-    print fb_friends
-
+    fb_friends = get_friends_on_facebook(user)
     
     if fb_friends:
         # even though the FQL query says that we should only have user id's that
@@ -27,6 +22,15 @@ def get_friends_on_site(user):
         return site_friends
     return None
 
+def get_friends_on_facebook(user):
+    #raises UserAssociation.DoesNotExist:
+    # TODO: NEED ERROR CHECKING
+    assoc = UserAssociation.objects.get(user=user)
+    
+    fql_query = "SELECT uid FROM user WHERE is_app_user AND uid IN (SELECT uid2 FROM friend WHERE uid1 = {0})".format(assoc.identifier)
+    fb_friends = json.load(do_fql_query(fql_query, assoc.token))
+    return fb_friends
+
 def do_fql_query(query, token=None, format='JSON'):
     """
     Perform the fql query on behalf of the given user. If the requested data
@@ -35,6 +39,9 @@ def do_fql_query(query, token=None, format='JSON'):
 
     Valid values for format are the default 'JSON' and 'XML'.
     """
+    
+    #TODO: NEED ERROR CHECKING
+    
     url = 'https://api.facebook.com/method/fql.query?'
     params = {
         'query': query,

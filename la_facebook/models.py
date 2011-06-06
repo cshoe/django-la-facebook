@@ -2,9 +2,9 @@ import datetime
 import facebook
 
 from django.db import models
-
 from django.contrib.auth.models import User
-
+from django_extensions.db.fields import CreationDateTimeField, ModificationDateTimeField
+from django.utils.translation import ugettext_lazy as _
 
 class UserAssociation(models.Model):
     
@@ -12,6 +12,8 @@ class UserAssociation(models.Model):
     identifier = models.CharField(max_length=255, db_index=True)
     token = models.CharField(max_length=200)
     expires = models.DateTimeField(null=True)
+    created = CreationDateTimeField(_('created'))
+    modified = ModificationDateTimeField(_('modified'))
     
     def __init__(self, *args, **kwargs):
         self.fb_profile = None
@@ -54,3 +56,20 @@ class UserAssociation(models.Model):
     
     def __unicode__(self):
         return 'UserAssociation for {0}'.format(self.user)
+    
+class Friend(models.Model):
+    """
+    Facebook friend relationships that exist within the app.
+    
+    Columns are named like the Facebook Friends table.
+    uid1 is the user you would typically have.
+    uid2 corresponds to the friend(s) of the user you have.
+    
+    """
+    uid1 = models.ForeignKey(User, related_name='uid1_set')
+    uid2 = models.ForeignKey(User, related_name='uid2_set')
+    created = CreationDateTimeField(_('created'))
+    modified = ModificationDateTimeField(_('modified'))
+    
+    def __unicode__(self):
+        return '{0} is friends with {1}'.format(self.uid1, self.uid2)

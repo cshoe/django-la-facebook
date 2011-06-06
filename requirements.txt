@@ -5,3 +5,5 @@ mock==0.7.0rc1
 
 #Official Facebook Python SDK
 -e git+http://github.com/facebook/python-sdk/#egg=facebook-python-sdk
+
+django-extensions==0.6
