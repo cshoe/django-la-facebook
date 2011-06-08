@@ -96,6 +96,8 @@ def facebook_friends(request, username=None,
     """
     Get Facebook friends that are also on the site.
     """
+    if username is None:
+        username = request.user.username
     user = get_object_or_404(User, username=username)
     
     try:

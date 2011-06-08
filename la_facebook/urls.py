@@ -17,4 +17,9 @@ urlpatterns = patterns("la_facebook.views",
         view = "facebook_friends",
         name = "la_facebook_friends"
     ),
+    url(
+        regex = r"^friends/$",
+        view = "facebook_friends",
+        name = "la_facebook_friends"
+    ),
 )
