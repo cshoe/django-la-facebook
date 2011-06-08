@@ -28,7 +28,7 @@ def get_friends_on_site(user):
             # data in case there is some breakage (FB has them but we don't) 
             site_friends = UserAssociation.objects.filter(identifier__in=[i['uid'] for i in fb_friends])
             return site_friends
-    return None
+    return []
 
 def get_friends_on_facebook(user):
     """
@@ -44,7 +44,7 @@ def get_friends_on_facebook(user):
     fb_friends = json.load(do_fql_query(fql_query, assoc.token))
     if 'error_code' not in fb_friends:
         return fb_friends
-    return None
+    return []
 
 def do_fql_query(query, token=None, format='JSON'):
     """
