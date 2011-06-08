@@ -13,6 +13,7 @@ def get_friends_on_site(user):
     """
     
     fb_friends = get_friends_on_facebook(user)
+    print 'asdf: {0}'.format(fb_friends)
     
     if fb_friends:
         # even though the FQL query says that we should only have user id's that
@@ -29,7 +30,9 @@ def get_friends_on_facebook(user):
     
     fql_query = "SELECT uid FROM user WHERE is_app_user AND uid IN (SELECT uid2 FROM friend WHERE uid1 = {0})".format(assoc.identifier)
     fb_friends = json.load(do_fql_query(fql_query, assoc.token))
-    return fb_friends
+    if 'error_code' not in fb_friends:
+        return fb_friends
+    return None
 
 def do_fql_query(query, token=None, format='JSON'):
     """
