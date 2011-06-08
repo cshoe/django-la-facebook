@@ -9,6 +9,7 @@ from django.utils.translation import ugettext_lazy as _
 class UserAssociation(models.Model):
     
     user = models.ForeignKey(User, unique=True)
+    # Why did anyone ever make this char?? And of length 255???
     identifier = models.CharField(max_length=255, db_index=True)
     token = models.CharField(max_length=200)
     expires = models.DateTimeField(null=True)
