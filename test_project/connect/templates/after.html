@@ -17,6 +17,7 @@
     {% else %}
         You don't seem to be logged in =(
     {% endif %}
+    <a href="{% url la_facebook_friends user.username %}">Friends</a>
     {% include 'fbinfo.html' %}
 </body>
 </html>
