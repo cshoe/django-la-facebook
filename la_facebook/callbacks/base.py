@@ -61,19 +61,23 @@ class BaseFacebookCallback(object):
     
     def do_friends_update(self, user):
         logger.debug('Starting friends update.')
-        friends_on_facebook = get_friends_on_facebook(user)
-        print 'fuck'
+        friends_on_facebook = []
+        print 'here'
+        for friend in get_friends_on_facebook(user):
+            friends_on_facebook.append(friend['uid'])
+        print 'here2'
+        
         print friends_on_facebook
         friend_ids_on_site = Friend.objects.filter(uid1=user).values_list('uid2', flat=True)
         friend_user_associations = UserAssociation.objects.filter(user__pk__in=friend_ids_on_site)
         
         friends_to_delete = []
-        
+        print friend_user_associations
         for ua in friend_user_associations:
             id = ua.identifier
             try:
-                friends_on_facebook[id]
-            except KeyError:
+                friends_on_facebook.index(id)
+            except ValueError:
                 try:
                     logger.debug('Removing {0} from add list.'.format(id))
                     friends_on_facebook.remove(id)
@@ -85,7 +89,22 @@ class BaseFacebookCallback(object):
                     logger.debug('Adding {0} to delete list.'.format(id))
                     friends_to_delete.append(id)
                 
-        logger.debug('Adding friends with facebook ids:'.format(friends_on_facebook))
+        logger.debug('Adding friends with facebook ids: {0}'.format(friends_on_facebook))
+        
+        #get user associations for facebook friends to add.
+        users = list(UserAssociation.objects.filter(identifier__in=friends_on_facebook).select_related('user'))
+        print users
+        for u in users:
+            Friend.objects.create(uid1=user, uid2=u.user)
+            Friend.objects.create(uid1=u.user, uid2=user)
+            
+        
+        #get user associations for facebook friends to delete
+        logger.debug('Deleting friends with facebook ids: {0}'.format(friends_to_delete))
+        users = list(UserAssociation.objects.filter(identifier__in=friends_to_delete).select_related('user'))
+        for u in users:
+            Friend.objects.delete(uid1=user, uid2=u.user)
+            Friend.objects.delete(uid1=u.user, uid2=user)
     
     def fetch_user_data(self, token):
         graph = facebook.GraphAPI(token)

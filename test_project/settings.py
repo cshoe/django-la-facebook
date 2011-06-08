@@ -121,5 +121,6 @@ FACEBOOK_ACCESS_SETTINGS = {
         # The following keys are optional
         # TODO - Comment next line out but still have tests pass
         "CALLBACK": "la_facebook.callbacks.base.base_facebook_callback", 
-        "PROVIDER_SCOPE": ['email'], # here as sample - optional
+        "PROVIDER_SCOPE": ['email'], # here as sample - optional,
+        "STORE_FRIENDS": True
 }
