@@ -4,4 +4,11 @@ mock==0.7.0rc1
 -f http://media.djangoproject.com/releases/1.3/Django-1.3-rc-1.tar.gz
 
 #Official Facebook Python SDK
+<<<<<<< Updated upstream
 -e git+http://github.com/facebook/python-sdk.git#egg=facebook-python-sdk
+=======
+-e git+http://github.com/facebook/python-sdk/#egg=facebook-python-sdk
+
+django-extensions==0.6
+south==0.7.3
+>>>>>>> Stashed changes
