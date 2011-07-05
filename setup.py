@@ -8,7 +8,7 @@ setup(
     description = "Definitive facebook auth for Django",
     long_description = open("README.rst").read(),
     license = "BSD",
-    url = "http://github.com/cartwheelweb/django-la-facebook",
+    url = "http://github.com/cshoe/django-la-facebook",
     packages = [
         "la_facebook",
         "la_facebook.templatetags",
@@ -24,8 +24,8 @@ setup(
         "Framework :: Django",
     ],
     install_requires=[
-        "facebook"
-    ],
+        "facebook",
+    ,
     dependency_links = [
 	"http://github.com/facebook/python-sdk/tarball/master#egg=facebook-python-sdk"
     ]
