@@ -98,6 +98,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'test_project.connect',
     'la_facebook',
+    'south',
 )
 
 try:

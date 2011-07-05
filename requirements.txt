@@ -7,3 +7,4 @@ mock==0.7.0rc1
 -e git+http://github.com/facebook/python-sdk/#egg=facebook-python-sdk
 
 django-extensions==0.6
+south==0.7.3
