@@ -24,7 +24,7 @@ setup(
         "Framework :: Django",
     ],
     install_requires=[
-        "facebook",
+        "facebook"
     ],
     dependency_links = [
 	"http://github.com/facebook/python-sdk/tarball/master#egg=facebook-python-sdk"
