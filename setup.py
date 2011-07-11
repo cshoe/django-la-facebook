@@ -25,7 +25,7 @@ setup(
     ],
     install_requires=[
         "facebook",
-    ]
+    ],
     dependency_links = [
 	"http://github.com/facebook/python-sdk/tarball/master#egg=facebook-python-sdk"
     ]
