@@ -1,5 +1,8 @@
 {% load la_facebook_tags %}
 {% if friends %}
+<h2>
+    {{ friend_owner.first_name }}'s Friends
+</h2>
 <ul>
 {% for friend in friends %}
     <li>

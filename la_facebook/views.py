@@ -21,7 +21,7 @@ def facebook_login(request, redirect_field_name="next",
         3. store and redirect to authorization url
         4. redirect to OAuth authorization url
     """
-    
+
     access = OAuthAccess()
     token = None
     if hasattr(request, "session"):
@@ -40,7 +40,7 @@ def facebook_callback(request, error_template_name="la_facebook/fb_error.html"):
         5. raise exception if missing token
         6. return access callback
         7. raise exception if mismatch token
-        8. render error 
+        8. render error
     """
     ctx = RequestContext(request)
     access = OAuthAccess()
@@ -76,41 +76,26 @@ def facebook_callback(request, error_template_name="la_facebook/fb_error.html"):
     # Can't change to 401 error because that prompts basic browser auth
     return render_to_response(error_template_name, ctx)
 
-'''
-# TODO - delete or actually use.
-# Probably unnecessary
-def finish_signup(request):
-    """
-        1. access OAuth
-        2. return callback url and finish signup
-    """
-    
-    access = OAuthAccess()
-    return access.callback.finish_signup(request) 
-'''
-
-def facebook_friends(request, username=None, 
+def facebook_friends(request, username=None,
                      success_template_name="la_facebook/friends.html",
                      no_fb_template_name="la_facebook/no_fb_profile.html",
                      token_error_template_name="la_facebook/token_error.html"):
-    """
-    Get Facebook friends that are also on the site.
-    """
+    """ Get Facebook friends that are also on the site. """
     if username is None:
         username = request.user.username
     user = get_object_or_404(User, username=username)
-    
+
     try:
         assocs = get_friends_on_site(user)
     except UserAssociation.DoesNotExist:
         #we don't know this users Facebook profile
-        return render_to_response(no_fb_template_name, 
+        return render_to_response(no_fb_template_name,
                               context_instance=RequestContext(request))
     except facebook.GraphAPIError:
         #token for this user has expired or something else went wrong
         #communicating with FB.
-        return render_to_response(token_error_template_name, 
+        return render_to_response(token_error_template_name,
                               context_instance=RequestContext(request))
 
-    return render_to_response(success_template_name, { "friends": assocs }, 
+    return render_to_response(success_template_name, {"friend_owner": user,"friends": assocs},
                               context_instance=RequestContext(request))
